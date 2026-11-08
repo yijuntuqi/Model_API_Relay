@@ -2,11 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 用 Render、Supabase 和 New API 部署一个可公开注册、人工充值、单上游单模型的模型中转测试站。
+**Goal:** 用智慧学堂测试服务器、既有独立 Supabase 和 New API 部署一个可公开注册、人工充值、单上游单模型的模型中转测试站；公网 HTTPS 就绪前仅通过 SSH 隧道私有测试。
 
-**Architecture:** New API 单体容器同时提供 Web 界面和 OpenAI 兼容 API，Render 运行容器，Supabase Session Pooler 提供持久化 PostgreSQL。阿里百炼是唯一上游；Netlify 只部署无后端逻辑的静态人工充值页。
+**Architecture:** New API 单体应用同时提供 Web 界面和 OpenAI 兼容 API。从官方固定版本镜像提取静态 Linux 二进制，在测试服务器 `/root/zhangyi` 内以私有 `3100` 端口进程运行，Supabase Session Pooler 提供持久化 PostgreSQL。阿里百炼是唯一上游；Netlify 只部署无后端逻辑的静态人工充值页。
 
-**Tech Stack:** New API `v1.0.0-rc.49`、Docker、Render Blueprint、Supabase PostgreSQL、阿里百炼 OpenAI 兼容接口、静态 HTML、Netlify。
+**Tech Stack:** New API `v1.0.0-rc.49`、本机 Docker 镜像提取、静态 Linux 二进制、Supabase PostgreSQL、阿里百炼 OpenAI 兼容接口、静态 HTML、Netlify。
 
 **Spec:** `docs/superpowers/specs/2026-11-08-public-model-relay-design.md`
 
@@ -17,8 +17,10 @@
 - 新用户额度为零，不赠送额度，不生成无额度限制的默认令牌。
 - 只配置用户指定的阿里百炼账户和一个模型；凭据只从 `D:\secure\ali-api-zy.csv` 读取所需字段。
 - 真实密钥、数据库连接串、管理员密码和收款码不得进入 Git；聊天和命令输出不得复述这些值。
-- Render、Supabase、Netlify 的创建、公开和付费操作均需用户授权；本计划只使用免费资源。
-- 不配置 Redis，不使用现有个人数据库，不接入其他 API 账号，不接自动支付。
+- 测试服务器只能修改 `/root/zhangyi`；服务器无 Docker，不修改 Nginx，不安装系统服务。
+- 当前进程仅使用私有 `3100` 端口，公网 `3100` 不通，只通过本机 SSH 隧道测试；公网 HTTPS 是公开前的强制门槛。
+- Supabase、Netlify 的创建、公开和付费操作以及服务器允许范围外的修改均需用户授权；本计划只使用免费资源。
+- 不配置 Redis，不使用其他站点的数据库，不接入其他 API 账号，不接自动支付。
 - 内容安全采用百炼上游审核与管理处置；公开前必须具备邮箱验证、人机验证、限流、封禁和令牌吊销能力。
 - 私密测试通过前不公开传播地址，不发生真实付款。
 
@@ -28,7 +30,7 @@
 - 上游已计费但本地超时、流式响应缺少最终用量时必须能发现对账差异；Task 3 用非流式、流式和失败请求对照上游用量固定该行为。
 - 数据库密码中的保留字符、IPv4 网络和 TLS 不能导致连接失败或明文回退；Task 2 用 Session Pooler、URL 编码和 `sslmode=require` 检查固定该行为。
 - 重复付款截图或重复人工操作不能自动形成多次入账；Task 5 用支付平台真实到账与人工记录双重核对固定该行为。
-- 免费实例休眠、重启和数据库暂停恢复后不得丢失余额或令牌；Task 6 用重启和恢复后的数据检查固定该行为。
+- 私有进程重启和数据库暂停恢复后不得丢失余额或令牌；Task 6 用重启和恢复后的数据检查固定该行为。
 
 ---
 
@@ -41,8 +43,8 @@
 - Create: `.env.example`
 
 **Interfaces:**
-- Produces: Docker 镜像入口，容器内 New API 监听 `0.0.0.0:3000`。
-- Produces: 后续 Render Blueprint 使用的变量名 `SQL_DSN`、`SESSION_SECRET`、`CRYPTO_SECRET`、`TZ`、`PORT`。
+- Produces: 官方固定版本镜像，容器内 New API 监听 `0.0.0.0:3000`，并作为静态 Linux 二进制的提取来源。
+- Produces: 后续服务器私有进程使用的变量名 `SQL_DSN`、`SESSION_SECRET`、`CRYPTO_SECRET`、`TZ`、`PORT`。
 
 - [ ] **Step 1: 检查版本和安全公告**
 
@@ -80,64 +82,57 @@
   git commit -m "chore: pin New API deployment image"
   ```
 
-### Task 2: 部署 Render 与独立 Supabase 数据库
+### Task 2: 在测试服务器运行私有 New API 进程
 
 **Files:**
-- Create: `render.yaml`
+- 无仓库部署文件；服务器文件只能放在 `/root/zhangyi`。
 
 **Interfaces:**
-- Consumes: Task 1 的 `Dockerfile` 和变量名。
-- Produces: 私有测试用 Render HTTPS 地址，以及可通过 `SQL_DSN` 访问的独立 PostgreSQL 数据库。
+- Consumes: Task 1 的官方固定版本镜像和变量名。
+- Produces: 可通过本机 SSH 隧道访问的私有 `3100` 服务，以及通过 `SQL_DSN` 访问的既有独立 PostgreSQL 数据库。
 
-- [ ] **Step 1: 创建 Render Blueprint**
+- [ ] **Step 1: 从官方镜像提取静态 Linux 二进制**
 
-  `render.yaml` 定义一个 Docker Web Service，`plan` 为 `free`，`healthCheckPath` 为 `/api/status`，设置 `TZ=Asia/Shanghai` 和 `PORT=3000`。`SQL_DSN` 使用 `sync: false`；`SESSION_SECRET` 与 `CRYPTO_SECRET` 使用平台生成值，不写固定秘密。
+  服务器官方独立 Release 二进制已因 glibc 过旧而运行失败。改为在本机从 `calciumion/new-api:v1.0.0-rc.49` 提取静态 Linux 二进制，核对目标架构、版本和 SHA-256。测试服务器无 Docker，不在服务器执行容器构建或运行。
 
-- [ ] **Step 2: 静态检查 Blueprint 和仓库安全**
+- [ ] **Step 2: 上传到用户限定目录**
 
-  Run: `git diff --check`
-  Expected: 无空白错误。
+  只将二进制及必要运行文件上传到测试服务器 `/root/zhangyi`，不修改该目录之外的文件，不修改 Nginx 或系统服务。
 
-  Run: `git status --short`
-  Expected: 只有计划内文件；没有 `.env`、CSV、数据库、日志或收款码。
+- [ ] **Step 3: 配置既有独立 Supabase 数据库**
 
-- [ ] **Step 3: 新建独立 Supabase 免费项目**
+  使用既有独立 Supabase 项目的 Session Pooler 连接串，端口为 `5432`，用户名采用 `postgres.[PROJECT-REF]`。密码中的 URL 保留字符必须百分号编码，并添加 `sslmode=require`；不要手猜 Pooler 主机名。连接串只进入 `/root/zhangyi` 内的私密运行配置，不进入 Git。
 
-  经用户授权后创建专用于本站的免费项目，选择离 Render 服务较近的可用区域，生成独立高强度数据库密码。不要修改或复用已有 Supabase 项目。
+- [ ] **Step 4: 启动私有进程**
 
-- [ ] **Step 4: 获取 Session Pooler 连接串**
+  在 `/root/zhangyi` 内启动 New API 私有进程，设置 `TZ=Asia/Shanghai`、`PORT=3100`、`SQL_DSN`、`SESSION_SECRET` 和 `CRYPTO_SECRET`，不安装系统服务。私有阶段使用 `SESSION_COOKIE_SECURE=false`；`TRUSTED_PROXIES` 暂未配置并保留启动警告，公开前必须完成公网 HTTPS 与可信代理评估。
 
-  在 Supabase `Connect` 中选择 **Session pooler**，使用端口 `5432`，用户名采用 `postgres.[PROJECT-REF]`。将密码中的 URL 保留字符百分号编码，并添加 `sslmode=require`；不要手猜 Pooler 主机名。
+- [ ] **Step 5: 检查迁移和日志安全**
 
-- [ ] **Step 5: 部署 Render 服务并注入 Secret**
+  查看私有进程日志，确认数据库表迁移完成且没有输出完整 `SQL_DSN`，没有数据库连接或 TLS 错误。
 
-  经用户授权后，通过 GitHub Blueprint 部署。把 Session Pooler 连接串只写入 Render Secret `SQL_DSN`，确认没有选择付费实例、磁盘或数据库。
+- [ ] **Step 6: 验证私有访问与公网隔离**
 
-- [ ] **Step 6: 检查迁移与 HTTPS 状态**
+  确认公网 `3100` 连接超时，通过本机 SSH 隧道访问服务。
 
-  查看 Render 构建和运行日志，确认数据库表迁移完成且没有输出完整 `SQL_DSN`。
-
-  Run: `curl --fail https://<render-test-host>/api/status`
-  Expected: HTTPS 请求成功，日志无连接、TLS 或迁移错误。
+  Run: `curl --fail http://127.0.0.1:<tunnel-local-port>/api/status`
+  Expected: 返回 success、New API 版本 `v1.0.0-rc.49`、`setup=true` 和 `self_use_mode=false`；不得将当前私有 HTTP 访问视为已满足公网 HTTPS 门槛。
 
 - [ ] **Step 7: 初始化管理员并保持站点私有**
 
-  创建独立 Root 管理员和强密码，不使用现有密码。只记录 Render 测试地址，不公开传播。
+  创建独立 Root 管理员和强密码，不使用现有密码。只通过 SSH 隧道进行私有测试，不公开传播服务地址；公网 HTTPS 未配置前不得公开。
 
-- [ ] **Step 8: 提交 Blueprint**
+- [ ] **Step 8: 收尾本地部署记录**
 
-  ```bash
-  git add render.yaml
-  git commit -m "chore: add free Render deployment blueprint"
-  ```
+  更新设计和本计划以反映实际方案，删除废弃的 Render Blueprint，并从项目 MCP 配置删除 Render 条目、保留 Supabase。检查 diff 后提交本地收尾改动，不推送远程。
 
 ### Task 3: 接入一个百炼模型并核对计费
 
 **Files:**
-- 无文件修改；只操作 New API 管理后台和平台 Secret。
+- 无文件修改；只操作 New API 管理后台和 `/root/zhangyi` 内的服务端私密配置。
 
 **Interfaces:**
-- Consumes: Task 2 的管理后台；用户指定的 `D:\secure\ali-api-zy.csv`。
+- Consumes: Task 2 的 SSH 隧道管理后台；用户指定的 `D:\secure\ali-api-zy.csv`。
 - Produces: 一个可供下游令牌调用的模型名，以及与百炼价格一致的计费配置。
 
 - [ ] **Step 1: 最小化读取百炼配置**
@@ -163,7 +158,7 @@
 
 - [ ] **Step 6: 验证非流式调用**
 
-  向 `https://<render-test-host>/v1/chat/completions` 发送短提示，`stream` 为 `false`。
+  通过 SSH 隧道向 `http://127.0.0.1:<tunnel-local-port>/v1/chat/completions` 发送短提示，`stream` 为 `false`。
   Expected: 返回选定模型的有效答案；响应不包含上游 Key；New API 和百炼均产生一条可核对用量。
 
 - [ ] **Step 7: 验证流式调用与用量**
@@ -182,8 +177,8 @@
 - 无文件修改；只操作 New API、SMTP 和 Cloudflare Turnstile 配置。
 
 **Interfaces:**
-- Consumes: Task 2 的 Render 主机名和 Task 3 的受额度保护模型。
-- Produces: 可公开注册但零初始额度、可验证邮箱、可限流和可封禁的用户流程。
+- Consumes: Task 2 的私有测试服务和 Task 3 的受额度保护模型。
+- Produces: 可公开注册但零初始额度、可验证邮箱、可限流和可封禁的用户流程；公网 HTTPS 未就绪前不开放。
 
 - [ ] **Step 1: 配置独立 SMTP**
 
@@ -192,7 +187,7 @@
 
 - [ ] **Step 2: 配置 Turnstile**
 
-  为 Render 测试主机名创建 Cloudflare Turnstile 免费站点，将 Site Key 和 Secret 分别写入对应安全位置，启用注册人机验证。
+  为公开前实际配置的 HTTPS 主机名创建 Cloudflare Turnstile 免费站点，将 Site Key 和 Secret 分别写入对应安全位置，启用注册人机验证。公网 HTTPS 主机名尚未确定时不得猜测或开放注册。
   Expected: 正常浏览器可完成验证；跳过验证不能注册。
 
 - [ ] **Step 3: 固定零额度注册策略**
@@ -202,7 +197,7 @@
 
 - [ ] **Step 4: 设置基础限流**
 
-  保留 `GLOBAL_API_RATE_LIMIT_ENABLE`、`GLOBAL_WEB_RATE_LIMIT_ENABLE` 和 `CRITICAL_RATE_LIMIT_ENABLE` 开启，在后台设置适合单免费实例的保守限制。
+  保留 `GLOBAL_API_RATE_LIMIT_ENABLE`、`GLOBAL_WEB_RATE_LIMIT_ENABLE` 和 `CRITICAL_RATE_LIMIT_ENABLE` 开启，在后台设置适合单私有进程的保守限制。
   Expected: 连续超额请求收到限流响应，正常低频注册和调用不受影响。
 
 - [ ] **Step 5: 验证管理处置**
@@ -273,22 +268,22 @@
 
 - [ ] **Step 3: 验证重启持久化**
 
-  记录测试用户余额、令牌标识和日志数量，重启 Render 服务后重新检查。
+  记录测试用户余额、令牌标识和日志数量，重启 `/root/zhangyi` 内的私有进程后重新检查，不修改系统服务。
   Expected: 用户、余额、令牌和日志保持；应用可从 Supabase 正常恢复。
 
 - [ ] **Step 4: 验证数据库备份与恢复路径**
 
   按 Supabase 当前免费功能导出本站数据库，并在独立临时数据库执行恢复验证；恢复完成即删除临时数据。若免费网络或工具限制导致无法备份恢复，保持站点私有且不接受真实付款。
 
-- [ ] **Step 5: 验证休眠与 Supabase 暂停恢复**
+- [ ] **Step 5: 验证私有进程与 Supabase 暂停恢复**
 
-  让免费服务自然休眠后重新访问；如 Supabase 项目暂停，则按官方 Resume 流程恢复后再测调用。
-  Expected: 唤醒后数据不丢失；页面明确接受冷启动延迟，不把休眠当作数据故障。
+  停止并重新启动 `/root/zhangyi` 内的私有进程后再测调用；如 Supabase 项目暂停，则按官方 Resume 流程恢复后再测。
+  Expected: 重启或数据库恢复后数据不丢失，进程可从 Supabase 正常恢复。
 
-- [ ] **Step 6: 实测中国大陆访问**
+- [ ] **Step 6: 配置公网 HTTPS 并实测中国大陆访问**
 
-  至少从两个不同的大陆网络打开 Web 页面并发起一次 API 调用，记录成功率、首字延迟和冷启动表现。
-  Expected: 两个网络均能完成流程；否则不公开推广，先重新选择托管方案。
+  公开前另行获得授权，配置公网 HTTPS；随后至少从两个不同的大陆网络打开 Web 页面并发起一次 API 调用，记录成功率和首字延迟。
+  Expected: 公网仅通过 HTTPS 暴露，两个网络均能完成流程；否则不公开推广，先重新选择托管或接入方案。
 
 - [ ] **Step 7: 核对公开运营前提**
 
@@ -303,4 +298,4 @@
 
 - [ ] **Step 9: 由用户决定是否公开**
 
-  只在用户明确确认后公开地址或接受真实付款。免费资源不足、访问不稳定或计费对账失败时，不通过购买资源或添加其他个人 Key 擅自继续。
+  只在用户明确确认且公网 HTTPS 已配置后公开地址或接受真实付款。免费资源不足、访问不稳定或计费对账失败时，不通过购买资源或添加其他个人 Key 擅自继续。
