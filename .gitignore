@@ -1,1 +1,9 @@
 .worktrees/
+.env
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.log
+logs/
+recharge/assets/*.png

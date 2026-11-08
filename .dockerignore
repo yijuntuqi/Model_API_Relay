@@ -1,0 +1,7 @@
+.git
+.env*
+*.key
+*.pem
+*.crt
+id_rsa*
+recharge/assets/*.png
