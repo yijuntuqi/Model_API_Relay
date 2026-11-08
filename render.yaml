@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: public-model-relay
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/status
+    envVars:
+      - key: TZ
+        value: Asia/Shanghai
+      - key: PORT
+        value: "3000"
+      - key: SQL_DSN
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: CRYPTO_SECRET
+        generateValue: true
+      - key: SESSION_COOKIE_SECURE
+        value: "true"
+      - key: SESSION_COOKIE_TRUSTED_URL
+        sync: false
