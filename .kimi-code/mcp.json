@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "render": {
+      "url": "https://mcp.render.com/mcp"
+    },
+    "supabase": {
+      "url": "https://mcp.supabase.com/mcp?features=account%2Cdatabase%2Cdebugging%2Cdevelopment%2Cdocs"
+    }
+  }
+}
