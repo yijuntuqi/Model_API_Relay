@@ -1,7 +1,8 @@
 {
   "mcpServers": {
     "render": {
-      "url": "https://mcp.render.com/mcp"
+      "url": "https://mcp.render.com/mcp",
+      "bearerTokenEnvVar": "RENDER_API_KEY"
     },
     "supabase": {
       "url": "https://mcp.supabase.com/mcp?features=account%2Cdatabase%2Cdebugging%2Cdevelopment%2Cdocs"
