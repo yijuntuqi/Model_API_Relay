@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>小E中转站 · 人工充值</title>
+<style>
+  :root { --fg: #1f2329; --sub: #646a73; --line: #e5e6eb; --bg: #f7f8fa; --card: #ffffff; --accent: #165dff; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; color: var(--fg); background: var(--bg); line-height: 1.7; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  .sub { color: var(--sub); margin: 0 0 24px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px 22px; margin-bottom: 16px; }
+  h2 { font-size: 17px; margin: 0 0 12px; }
+  table { width: 100%; border-collapse: collapse; }
+  td, th { border-bottom: 1px solid var(--line); padding: 8px 4px; text-align: left; font-size: 15px; }
+  th { color: var(--sub); font-weight: 500; }
+  tr:last-child td { border-bottom: none; }
+  .qr-grid { display: flex; gap: 16px; flex-wrap: wrap; }
+  .qr { flex: 1; min-width: 240px; text-align: center; }
+  .qr img { width: 100%; max-width: 280px; border: 1px solid var(--line); border-radius: 8px; }
+  .qr p { margin: 8px 0 0; color: var(--sub); font-size: 14px; }
+  .warn { border-left: 4px solid #ff7d00; background: #fff7e8; padding: 12px 16px; border-radius: 0 8px 8px 0; font-size: 15px; }
+  .contact { font-size: 16px; }
+  .contact code { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px; font-size: 15px; }
+  ol { padding-left: 22px; margin: 8px 0; }
+  ol li { margin-bottom: 6px; }
+  .foot { color: var(--sub); font-size: 13px; text-align: center; margin-top: 24px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>小E中转站 · 人工充值</h1>
+  <p class="sub">本站为个人运营的模型 API 中转站，充值由管理员人工处理。</p>
+
+  <div class="card">
+    <h2>一、充值规则</h2>
+    <table>
+      <tr><th>充值金额</th><th>到账额度</th></tr>
+      <tr><td>¥10（最小充值）</td><td>$1.5 站点额度</td></tr>
+      <tr><td>¥20</td><td>$3.0 站点额度</td></tr>
+      <tr><td>¥50</td><td>$7.5 站点额度</td></tr>
+      <tr><td>¥100</td><td>$15.0 站点额度</td></tr>
+    </table>
+    <p style="color:var(--sub); font-size:14px; margin:12px 0 0;">
+      额度按美元（$）计入站点账户钱包，仅用于本站模型调用扣费。定价按上游模型厂商实际
+      Token 美元成本与实时汇率折算，已含少量运营成本，比例可能随上游调价浮动，以付款时页面公示为准。
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>二、收款码</h2>
+    <div class="qr-grid">
+      <div class="qr">
+        <img src="assets/wechat.png" alt="微信支付收款码">
+        <p>微信支付</p>
+      </div>
+      <div class="qr">
+        <img src="assets/alipay.png" alt="支付宝收款码">
+        <p>支付宝</p>
+      </div>
+    </div>
+    <div class="warn" style="margin-top:16px;">
+      <strong>付款不等于自动到账。</strong>本站不接入任何自动支付接口，付款后请务必按第三步联系管理员人工入账。
+      请按需充值，额度一经入账不支持退款。
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>三、付款后操作（人工到账）</h2>
+    <ol>
+      <li>完成上面的扫码付款，并保留付款凭证（账单截图）。</li>
+      <li>联系管理员，提供：<strong>你的站点注册邮箱或用户名</strong> + 付款金额 + 付款凭证。</li>
+      <li>管理员核对支付平台真实到账后，人工将对应额度充入你的站点账户。</li>
+      <li>到账后在站点「钱包」页面确认余额，再创建 API 令牌使用。</li>
+    </ol>
+  </div>
+
+  <div class="card contact">
+    <h2>四、联系管理员</h2>
+    <p>微信：<code>zy17796591211</code></p>
+    <p>邮箱：<code>202411109014@mail.bnu.edu.cn</code></p>
+    <p style="color:var(--sub); font-size:14px;">建议加微信，到账最快。一般工作时间 1 小时内处理。</p>
+  </div>
+
+  <div class="card">
+    <h2>五、安全提示</h2>
+    <p style="margin:0;">
+      本页面不收集你的密码、API Key 或任何账号凭据；请勿向任何人（包括自称管理员的人）泄露你的站点密码和令牌。
+      请通过站点首页注册入口注册账号后再充值。
+    </p>
+  </div>
+
+  <p class="foot">小E中转站 · 人工充值说明页 · 额度仅供站内模型调用使用</p>
+
+</div>
+</body>
+</html>
